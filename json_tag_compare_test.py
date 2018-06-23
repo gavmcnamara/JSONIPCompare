@@ -2,7 +2,7 @@
 import requests
 import sys, os
 from datetime import date
-import glob
+import write_to_json
 
 # changed dir to file locations
 path = os.path.dirname(__file__)
@@ -18,46 +18,67 @@ with open('azure_gov_ip_{}.json'.format(date.today()), "wb") as code:
     file_c = code.write(r.content)
 
 # create log file with results
-sys.stdout = open('log1.txt', 'w')
+sys.stdout = open('log.txt', 'w')
+
+
+metadataFile = open('check_last_file.json', 'r')
+metadata = json.loads(metadataFile.read())
+print(metadata)
+
+lastConfigurationFile = open(metadata['lastAddressPrefixFile'], 'r')
+lastConfiguration = json.loads(lastConfigurationFile.read())
+
+# do code to compare last configuration
+latestFileName = 'azure_gov_ip_{}.json'.format(date.today())
+latestConfigurationFile = open(latestFileName, 'w')
+latestConfigurationFile.write(json.dumps(latestFileName))
+
+metadata['lastAddressPrefixFile'] = latestFileName
+metadataFile_ = open('check_last_file.json', 'w')
+metadataFile_.write(json.dumps(latestFileName))
+
+
+
+
 
 def json_compare():
 
     # Find and read json files   
     with open(r'azure_gov_ip_2018-06-21.json') as fh:
-        file_a = json.load(fh)
+        last_file = json.load(fh)
     with open(r'azure_gov_ip_' + str(date.today()) + '.json') as fh:
-        file_b = json.load(fh) 
+        latest_file = json.load(fh) 
         
     # Parses through json files to determine if file a equals file b for SQL.USGovVirginia
-    for f_a in file_a['values']:
-        for f_b in file_b['values']:
-            if f_a['name'] == 'Sql.USGovVirginia' and f_b['name'] == 'Sql.USGovVirginia':
-                if f_a['properties']['changeNumber'] == f_b['properties']['changeNumber']:
+    for last in last_file['values']:
+        for latest in latest_file['values']:
+            if last['name'] == 'Sql.USGovVirginia' and latest['name'] == 'Sql.USGovVirginia':
+                if last['properties']['changeNumber'] == latest['properties']['changeNumber']:
                     print("There are no changes: SQL.USGovVirginia")
                 else:
                     # prints diff of two lists
                     print("There are changes: SQL.USGovVirginia")
-                    old_addresses = list(set(f_a['properties']['addressPrefixes']) - set(f_b['properties']['addressPrefixes']))#[0].encode('UTF-8')
-                    new_addresses = list(set(f_b['properties']['addressPrefixes']) - set(f_a['properties']['addressPrefixes']))#[0].encode('UTF-8')
-                    print("Removed: " + str(old_addresses))
-                    print("Added: " + str(new_addresses))
+                    last_ips = list(set(last['properties']['addressPrefixes']) - set(latest['properties']['addressPrefixes']))#[0].encode('UTF-8')
+                    latest_ips = list(set(latest['properties']['addressPrefixes']) - set(last['properties']['addressPrefixes']))#[0].encode('UTF-8')
+                    print("Removed: " + str(last_ips))
+                    print("Added: " + str(latest_ips))
                     print('')
                     # return f_a['name'], f_b['name']
 
     # Parses through json files to determine if file a equals file b for Storage.USGovVirginia
-    for f_a in file_a['values']:
-        for f_b in file_b['values']:
-            if f_a['name'] == 'Storage.USGovVirginia' and f_b['name'] == 'Storage.USGovVirginia':
-                if f_a['properties']['changeNumber'] == f_b['properties']['changeNumber']:
+    for last in last_file['values']:
+        for latest in latest_file['values']:
+            if last['name'] == 'Storage.USGovVirginia' and latest['name'] == 'Storage.USGovVirginia':
+                if last['properties']['changeNumber'] == latest['properties']['changeNumber']:
                     print("There are no changes: Storage.GovVirginia")
                 else:
                     # prints diff of two lists 
                     print("There are changes: Storage.USGovVirginia")
-                    old_addresses = list(set(f_a['properties']['addressPrefixes']) - set(f_b['properties']['addressPrefixes']))#[0].encode('UTF-8')
-                    new_addresses = list(set(f_b['properties']['addressPrefixes']) - set(f_a['properties']['addressPrefixes']))#[0].encode('UTF-8')
-                    print("Removed: " + str(old_addresses))
-                    print("Added: " + str(new_addresses))
-                    return f_a['name'], f_b['name']
+                    last_ips = list(set(last['properties']['addressPrefixes']) - set(latest['properties']['addressPrefixes']))#[0].encode('UTF-8')
+                    latest_ips = list(set(latest['properties']['addressPrefixes']) - set(last['properties']['addressPrefixes']))#[0].encode('UTF-8')
+                    print("Removed: " + str(last_ips))
+                    print("Added: " + str(latest_ips))
+                    return last['name'], latest['name']
     
 json_compare()
 sys.stdout.close()
