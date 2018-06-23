@@ -1,54 +1,74 @@
 ﻿import json 
 import requests
 import sys, os
-from datetime import date
-import write_to_json
+from datetime import date, datetime
 
 # changed dir to file locations
 path = os.path.dirname(__file__)
 os.chdir(path)
+#print(os.getcwd())
+
+# creates json file that stores latest file object
+def writeToJSONFile(path, fileName, data):
+    filePathNameWExt = './' + path + fileName + '.json'
+    with open(filePathNameWExt, 'w') as fp:
+        json.dump(data, fp)
+
+path = '/'
+fileName = 'check_last_file'
+
+data = {}
+data['lastAddressPrefixFile'] = 'archive/azure_gov_ip_2018-06-21.json'
+
+writeToJSONFile(path, fileName, data)
 
 # download json file from website
 #url = "https://www.microsoft.com/en-us/download/confirmation.aspx?id=57063"
 url= "https://download.microsoft.com/download/6/4/D/64DB03BF-895B-4173-A8B1-BA4AD5D4DF22/ServiceTags_AzureGovernment_20180620.json"
 r = requests.get(url)
 print("downloading")
-# create file with todays date
-with open('azure_gov_ip_{}.json'.format(date.today()), "wb") as code:
-    file_c = code.write(r.content)
 
-# create log file with results
-sys.stdout = open('log.txt', 'w')
-
-
+# opens and reads file with json object
 metadataFile = open('check_last_file.json', 'r')
 metadata = json.loads(metadataFile.read())
-print(metadata)
 
+# reads data from json to get last json file used
 lastConfigurationFile = open(metadata['lastAddressPrefixFile'], 'r')
 lastConfiguration = json.loads(lastConfigurationFile.read())
+#print(lastConfiguration)
 
 # do code to compare last configuration
 latestFileName = 'azure_gov_ip_{}.json'.format(date.today())
 latestConfigurationFile = open(latestFileName, 'w')
 latestConfigurationFile.write(json.dumps(latestFileName))
 
+# stores latest json file as a string
 metadata['lastAddressPrefixFile'] = latestFileName
 metadataFile_ = open('check_last_file.json', 'w')
 metadataFile_.write(json.dumps(latestFileName))
 
-
-
-
-
+# create log file with results
+sys.stdout = open('log.txt', 'w')
+'''
+today = date.today()
+date_format = '%Y-%m-%d'
+#dates = datetime.strptime('azure_gov_ip_' + date_format + '.json').date()
+past_dates = [date for date in date_format if date < today]
+next_closest_date = max(past_dates)
+'''
 def json_compare():
+
+    # create file with todays date
+    with open('azure_gov_ip_{}.json'.format(date.today()), "wb") as code:
+        file_c = code.write(r.content)
 
     # Find and read json files   
     with open(r'azure_gov_ip_2018-06-21.json') as fh:
         last_file = json.load(fh)
+
     with open(r'azure_gov_ip_' + str(date.today()) + '.json') as fh:
         latest_file = json.load(fh) 
-        
+            
     # Parses through json files to determine if file a equals file b for SQL.USGovVirginia
     for last in last_file['values']:
         for latest in latest_file['values']:
