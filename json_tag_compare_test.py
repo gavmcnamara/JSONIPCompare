@@ -61,6 +61,7 @@ def checkLastFile():
     metadataFile_ = open('check_last_file.json', 'w')
     metadataFile_.write(json.dumps(latestFileName))
 checkLastFile()
+
 # create log file with results
 sys.stdout = open('log.txt', 'w')
 
