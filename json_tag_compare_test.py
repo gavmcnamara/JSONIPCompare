@@ -1,20 +1,11 @@
 ﻿import json 
 import requests
 import sys, os
-from datetime import date, datetime
-from datetime import timedelta
-import pandas as pd
+from datetime import date, datetime, timedelta
 
 # changed dir to file locations
 path = os.path.dirname(__file__)
 os.chdir(path)
-
-#files = [f for f in os.listdir('.') if os.path.isfile(f)]
-#date_format = '%Y-%m-%d'
-#for f in files:
-#    print(f)
-
-#print(os.getcwd())
 
 # creates json file that stores latest file object
 def writeToJSONFile(path, fileName, data):
@@ -32,7 +23,6 @@ print(yesterday)
 
 data = {}
 data['lastAddressPrefixFile'] = 'archive/azure_gov_ip_' + yesterday.strftime('%Y-%m-%d') + '.json'
-
 writeToJSONFile(path, fileName, data)
 
 # download json file from website
@@ -65,16 +55,21 @@ checkLastFile()
 # create log file with results
 sys.stdout = open('log.txt', 'w')
 
+# Create date that returns yesterday
+today = date.today()
+yesterday = today - timedelta(days=2)
+
 def json_compare():
 
     # create file with todays date
     with open('azure_gov_ip_{}.json'.format(date.today()), "wb") as code:
         file_c = code.write(r.content)
 
-    # Find and read json files   
-    with open(r'azure_gov_ip_2018-06-21.json') as fh:
+    # Find and read json file from yesterday   
+    with open(r'azure_gov_ip_' + yesterday.strftime('%Y-%m-%d') + '.json') as fh:
         last_file = json.load(fh)
 
+    # Find and read json file from today
     with open(r'azure_gov_ip_' + str(date.today()) + '.json') as fh:
         latest_file = json.load(fh) 
             
