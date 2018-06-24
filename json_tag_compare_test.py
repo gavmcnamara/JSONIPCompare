@@ -2,10 +2,18 @@
 import requests
 import sys, os
 from datetime import date, datetime
+from datetime import timedelta
+import pandas as pd
 
 # changed dir to file locations
 path = os.path.dirname(__file__)
 os.chdir(path)
+
+#files = [f for f in os.listdir('.') if os.path.isfile(f)]
+#date_format = '%Y-%m-%d'
+#for f in files:
+#    print(f)
+
 #print(os.getcwd())
 
 # creates json file that stores latest file object
@@ -17,8 +25,13 @@ def writeToJSONFile(path, fileName, data):
 path = '/'
 fileName = 'check_last_file'
 
+today = datetime.today()
+yesterday = today - timedelta(days=2)
+print(today)
+print(yesterday)
+
 data = {}
-data['lastAddressPrefixFile'] = 'archive/azure_gov_ip_2018-06-21.json'
+data['lastAddressPrefixFile'] = 'archive/azure_gov_ip_' + yesterday.strftime('%Y-%m-%d') + '.json'
 
 writeToJSONFile(path, fileName, data)
 
@@ -28,34 +41,29 @@ url= "https://download.microsoft.com/download/6/4/D/64DB03BF-895B-4173-A8B1-BA4A
 r = requests.get(url)
 print("downloading")
 
-# opens and reads file with json object
-metadataFile = open('check_last_file.json', 'r')
-metadata = json.loads(metadataFile.read())
+def checkLastFile():
+    # opens and reads file with json object
+    metadataFile = open('check_last_file.json', 'r')
+    metadata = json.loads(metadataFile.read())
 
-# reads data from json to get last json file used
-lastConfigurationFile = open(metadata['lastAddressPrefixFile'], 'r')
-lastConfiguration = json.loads(lastConfigurationFile.read())
-#print(lastConfiguration)
+    # reads data from json to get last json file used
+    lastConfigurationFile = open(metadata['lastAddressPrefixFile'], 'r')
+    lastConfiguration = json.loads(lastConfigurationFile.read())
+    #print(lastConfiguration)
 
-# do code to compare last configuration
-latestFileName = 'azure_gov_ip_{}.json'.format(date.today())
-latestConfigurationFile = open(latestFileName, 'w')
-latestConfigurationFile.write(json.dumps(latestFileName))
+    # do code to compare last configuration
+    latestFileName = 'azure_gov_ip_{}.json'.format(date.today())
+    latestConfigurationFile = open(latestFileName, 'w')
+    latestConfigurationFile.write(json.dumps(latestFileName))
 
-# stores latest json file as a string
-metadata['lastAddressPrefixFile'] = latestFileName
-metadataFile_ = open('check_last_file.json', 'w')
-metadataFile_.write(json.dumps(latestFileName))
-
+    # stores latest json file as a string
+    metadata['lastAddressPrefixFile'] = latestFileName
+    metadataFile_ = open('check_last_file.json', 'w')
+    metadataFile_.write(json.dumps(latestFileName))
+checkLastFile()
 # create log file with results
 sys.stdout = open('log.txt', 'w')
-'''
-today = date.today()
-date_format = '%Y-%m-%d'
-#dates = datetime.strptime('azure_gov_ip_' + date_format + '.json').date()
-past_dates = [date for date in date_format if date < today]
-next_closest_date = max(past_dates)
-'''
+
 def json_compare():
 
     # create file with todays date
