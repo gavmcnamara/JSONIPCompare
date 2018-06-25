@@ -8,9 +8,6 @@ from datetime import date, datetime, timedelta
 path = os.path.dirname(__file__)
 os.chdir(path)
 
-# create log file with results
-sys.stdout = open('log.txt', 'w')
-
 # Create date that returns last two days
 today = date.today()
 yesterday = today - timedelta(days=1)
@@ -21,7 +18,15 @@ files = os.listdir('.')
 for f in files:
     if f == 'azure_gov_ip_' + two_days.strftime('%Y-%m-%d') + '.json':
         os.rename('azure_gov_ip_' + two_days.strftime('%Y-%m-%d') + '.json',
-                    'archive/azure_gov_ip_' + two_days.strftime('%Y-%m-%d' + '.json'))
+                    'archive/azure_gov_ip_' + two_days.strftime('%Y-%m-%d') + '.json')
+
+# create log with results for each day
+sys.stdout = open('log_{}.txt'.format(date.today()), 'w')
+# store old log files in archive
+for f in files:
+    if f == 'log_' + yesterday.strftime('%Y-%m-%d') + '.txt':
+        os.rename('log_' + yesterday.strftime('%Y-%m-%d') + '.txt',
+                    'archive/log_' + yesterday.strftime('%Y-%m-%d') + '.txt')
 
 # creates json file that stores last file object
 def writeToJSONFile(path, fileName, data):
@@ -44,7 +49,6 @@ writeToJSONFile(path, fileName, data)
 url= "https://download.microsoft.com/download/6/4/D/64DB03BF-895B-4173-A8B1-BA4AD5D4DF22/ServiceTags_AzureGovernment_20180620.json"
 #'https://download.microsoft.com/download/7/1/D/71D86715-5596-4529-9B13-DA13A5DE5B63/ServiceTags_Public_[0-2][0-1][0-2][0-1][0-9][0-9][0-9].json'
 r = requests.get(url)
-
 # if url is invalid raise error
 try:
    urllib2.urlopen(url)
@@ -52,7 +56,7 @@ except urllib2.HTTPError as err:
    if err.code == 404:
        print(err)
 
-# replaces last file with latest file
+# replaces last file with latest file as json object
 def checkLastFile():   
     # opens file with json object of last opened file
     metadataFile = open('check_last_file.json', 'r')
@@ -97,8 +101,10 @@ def json_compare():
                 else:
                     # prints diff of two lists
                     print("There are changes: SQL.USGovVirginia")
-                    last_ips = list(set(last['properties']['addressPrefixes']) - set(latest['properties']['addressPrefixes']))#[0].encode('UTF-8')
-                    latest_ips = list(set(latest['properties']['addressPrefixes']) - set(last['properties']['addressPrefixes']))#[0].encode('UTF-8')
+                    last_ips = list(set(last['properties']['addressPrefixes'])
+                                 - set(latest['properties']['addressPrefixes']))#[0].encode('UTF-8')
+                    latest_ips = list(set(latest['properties']['addressPrefixes'])
+                                 - set(last['properties']['addressPrefixes']))#[0].encode('UTF-8')
                     print("Removed: " + str(last_ips))
                     print("Added: " + str(latest_ips))
                     print('')
@@ -113,8 +119,10 @@ def json_compare():
                 else:
                     # prints diff of two lists 
                     print("There are changes: Storage.USGovVirginia")
-                    last_ips = list(set(last['properties']['addressPrefixes']) - set(latest['properties']['addressPrefixes']))#[0].encode('UTF-8')
-                    latest_ips = list(set(latest['properties']['addressPrefixes']) - set(last['properties']['addressPrefixes']))#[0].encode('UTF-8')
+                    last_ips = list(set(last['properties']['addressPrefixes'])
+                                 - set(latest['properties']['addressPrefixes']))#[0].encode('UTF-8')
+                    latest_ips = list(set(latest['properties']['addressPrefixes'])
+                                 - set(last['properties']['addressPrefixes']))#[0].encode('UTF-8')
                     print("Removed: " + str(last_ips))
                     print("Added: " + str(latest_ips))
                     return last, latest
