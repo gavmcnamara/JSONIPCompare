@@ -1,4 +1,5 @@
 ﻿import json 
+import urllib2
 import requests
 import sys, os
 from datetime import date, datetime, timedelta 
@@ -6,6 +7,9 @@ from datetime import date, datetime, timedelta
 # changed dir to file locations
 path = os.path.dirname(__file__)
 os.chdir(path)
+
+# create log file with results
+sys.stdout = open('log.txt', 'w')
 
 # Create date that returns last two days
 today = date.today()
@@ -41,6 +45,13 @@ url= "https://download.microsoft.com/download/6/4/D/64DB03BF-895B-4173-A8B1-BA4A
 #'https://download.microsoft.com/download/7/1/D/71D86715-5596-4529-9B13-DA13A5DE5B63/ServiceTags_Public_[0-2][0-1][0-2][0-1][0-9][0-9][0-9].json'
 r = requests.get(url)
 
+# if url is invalid raise error
+try:
+   urllib2.urlopen(url)
+except urllib2.HTTPError as err:
+   if err.code == 404:
+       print(err)
+
 # replaces last file with latest file
 def checkLastFile():   
     # opens file with json object of last opened file
@@ -61,9 +72,6 @@ def checkLastFile():
     metadataFile_ = open('check_last_file.json', 'w')
     metadataFile_.write(json.dumps(latestFileName))
 checkLastFile()
-
-# create log file with results
-sys.stdout = open('log.txt', 'w')
 
 # compares last and latest json files
 def json_compare():
