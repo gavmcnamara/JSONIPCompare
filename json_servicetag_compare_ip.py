@@ -1,8 +1,10 @@
-﻿import json 
+﻿from bs4 import BeautifulSoup
+import re
+import json 
 import urllib2
 import requests
 import sys, os
-from datetime import date, datetime, timedelta 
+from datetime import date, timedelta 
 
 # changed dir to file locations
 path = os.path.dirname(__file__)
@@ -20,9 +22,8 @@ for f in files:
         os.rename('azure_gov_ip_' + two_days.strftime('%Y-%m-%d') + '.json',
                     'archive/azure_gov_ip_' + two_days.strftime('%Y-%m-%d') + '.json')
 
-# create log with results for each day
+# create log file with results or errors
 sys.stdout = open('log_{}.txt'.format(date.today()), 'w')
-# store old log files in archive
 for f in files:
     if f == 'log_' + yesterday.strftime('%Y-%m-%d') + '.txt':
         os.rename('log_' + yesterday.strftime('%Y-%m-%d') + '.txt',
@@ -37,7 +38,7 @@ def writeToJSONFile(path, fileName, data):
 path = '/'
 fileName = 'check_last_file'
 
-today = datetime.today()
+today = date.today()
 yesterday = today - timedelta(days=1)
 
 data = {}
@@ -45,18 +46,30 @@ data['lastAddressPrefixFile'] = 'azure_gov_ip_' + yesterday.strftime('%Y-%m-%d')
 writeToJSONFile(path, fileName, data)
 
 # download json file from website
-#url = "https://www.microsoft.com/en-us/download/confirmation.aspx?id=57063"
-url= "https://download.microsoft.com/download/6/4/D/64DB03BF-895B-4173-A8B1-BA4AD5D4DF22/ServiceTags_AzureGovernment_20180620.json"
-#'https://download.microsoft.com/download/7/1/D/71D86715-5596-4529-9B13-DA13A5DE5B63/ServiceTags_Public_[0-2][0-1][0-2][0-1][0-9][0-9][0-9].json'
-r = requests.get(url)
+req = urllib2.Request('https://www.microsoft.com/en-us/download/confirmation.aspx?id=57063', headers={ 'User-Agent': 'Mozilla/5.0' })
+html = urllib2.urlopen(req).read()
+# using BeautifulSoup library to parse through html
+soup = BeautifulSoup(html, 'html.parser')
+
+# array to store the results
+json_file =[]
+for a in soup.findAll('a', href=True):
+    # search for href links with ServiceTags in string
+    if re.search('ServiceTags', a['href']):
+        json_file = a['href']
+
+# request link
+r = requests.get(json_file)
+
 # if url is invalid raise error
 try:
-   urllib2.urlopen(url)
+   urllib2.urlopen(json_file)
 except urllib2.HTTPError as err:
    if err.code == 404:
+       print("Copy and paste new url.")
        print(err)
 
-# replaces last file with latest file as json object
+# replaces last file with latest file
 def checkLastFile():   
     # opens file with json object of last opened file
     metadataFile = open('check_last_file.json', 'r')
@@ -114,7 +127,7 @@ def json_compare():
         for latest in latest_file['values']:
             if last['name'] == 'Storage.USGovVirginia' and latest['name'] == 'Storage.USGovVirginia':
                 if last['properties']['changeNumber'] == latest['properties']['changeNumber']:
-                    print("There are no changes: Storage.GovVirginia")
+                    print("There are no changes: Storage.USGovVirginia")
                     print('')
                 else:
                     # prints diff of two lists 
@@ -126,6 +139,23 @@ def json_compare():
                     print("Removed: " + str(last_ips))
                     print("Added: " + str(latest_ips))
                     return last, latest
+
+    # Parses through json files if last file equals latest file on ServiceBus.USGovVirginia
+    for last in last_file['values']:
+        for latest in latest_file['values']:
+            if last['name'] == 'ServiceBus.USGovVirginia' and latest['name'] == 'ServiceBus.USGovVirginia':
+                if last['properties']['changeNumber'] == latest['properties']['changeNumber']:
+                    print("There are no changes: ServiceBus.USGovVirginia")
+                    print('')
+                else:
+                    # prints diff of two lists
+                    print("There are changes: ServiceBus.USGovVirginia")
+                    last_ips = list(set(last['properties']['addressPrefixes'])
+                                 - set(latest['properties']['addressPrefixes']))#[0].encode('UTF-8')
+                    latest_ips = list(set(latest['properties']['addressPrefixes'])
+                                 - set(last['properties']['addressPrefixes']))#[0].encode('UTF-8')
+                    print("Removed: " + str(last_ips))
+                    print("Added: " + str(latest_ips))
+                    print('')
 json_compare()
 sys.stdout.close()
-
